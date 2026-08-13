@@ -1,0 +1,59 @@
+# API Framework
+fastapi[standard]  # Includes uvicorn[standard] with uvloop
+pydantic
+pydantic-settings
+python-multipart
+mangum  # AWS Lambda adapter for FastAPI
+
+# Document Processing
+docling                # Advanced PDF parsing with layout analysis
+docling-core           # Chunking infrastructure
+semchunk               # Semantic text splitting (used by HybridChunker)
+unstructured[all-docs] # Keep as fallback for edge cases
+pdfminer.six==20231228  # Pin compatible version for unstructured
+python-magic  # For file type detection (uses system libmagic on macOS)
+pillow  # Image processing for document parsing
+
+# Embeddings & Vector DB
+openai
+pinecone>=7.0.0,<8.0.0  # pinned below 8.0.0 to satisfy langchain-pinecone's constraint
+tiktoken
+
+# LangChain (RAG pipeline: embeddings, text splitting, vector store, generation)
+langchain-core>=1.5.3,<2.0.0
+langchain-openai>=1.4.3,<2.0.0
+langchain-text-splitters>=1.1.2,<2.0.0
+langchain-pinecone>=0.2.13,<0.3.0
+
+langgraph
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
+
+# Text-to-SQL
+vanna[fastapi,openai,postgres]
+sqlalchemy
+psycopg2-binary
+faker
+
+# Evaluation & Monitoring
+ragas
+datasets
+opik
+
+# Utilities
+python-dotenv
+httpx
+
+# Caching
+numpy  # Efficient binary storage of embeddings
+upstash-redis>=0.15.0  # Redis cache for query results (serverless-friendly)
+
+# AWS Services (for S3 storage backend)
+boto3>=1.34.0  # AWS SDK for S3 storage
+
+# Development
+pytest
+pytest-asyncio
+black
+ruff
+moto[s3]  # Mock AWS S3 for testing
