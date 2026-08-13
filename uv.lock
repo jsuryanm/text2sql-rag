@@ -3126,7 +3126,7 @@ requires-dist = [
     { name = "openai" },
     { name = "opik", specifier = ">=2.2.26" },
     { name = "opik", marker = "extra == 'eval'" },
-    { name = "pdfminer-six", specifier = "==20231228" },
+    { name = "pdfminer-six", specifier = ">=20240706" },
     { name = "pillow" },
     { name = "pinecone", specifier = ">=7.0.0,<8.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'" },
@@ -3972,15 +3972,15 @@ wheels = [
 
 [[package]]
 name = "pdfminer-six"
-version = "20231228"
+version = "20260107"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "charset-normalizer" },
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/31/b1/a43e3bd872ded4deea4f8efc7aff1703fca8c5455d0c06e20506a06a44ff/pdfminer.six-20231228.tar.gz", hash = "sha256:6004da3ad1a7a4d45930cb950393df89b068e73be365a6ff64a838d37bcb08c4", size = 7362505, upload-time = "2023-12-28T21:25:32.863Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/a4/5cec1112009f0439a5ca6afa8ace321f0ab2f48da3255b7a1c8953014670/pdfminer_six-20260107.tar.gz", hash = "sha256:96bfd431e3577a55a0efd25676968ca4ce8fd5b53f14565f85716ff363889602", size = 8512094, upload-time = "2026-01-07T13:29:12.937Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/9c/e46fe7502b32d7db6af6e36a9105abb93301fa1ec475b5ddcba8b35ae23a/pdfminer.six-20231228-py3-none-any.whl", hash = "sha256:e8d3c3310e6fbc1fe414090123ab01351634b4ecb021232206c4c9a8ca3e3b8f", size = 5614515, upload-time = "2023-12-28T21:25:30.329Z" },
+    { url = "https://files.pythonhosted.org/packages/20/8b/28c4eaec9d6b036a52cb44720408f26b1a143ca9bce76cc19e8f5de00ab4/pdfminer_six-20260107-py3-none-any.whl", hash = "sha256:366585ba97e80dffa8f00cebe303d2f381884d8637af4ce422f1df3ef38111a9", size = 6592252, upload-time = "2026-01-07T13:29:10.742Z" },
 ]
 
 [[package]]

@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 50
 
     # Storage Backend Configuration
-    STORAGE_BACKEND: str = "s3"  # Options: "local", "s3"
+    STORAGE_BACKEND: str = "local"  # Options: "local", "s3"
 
     # Storage paths (auto-detects Lambda environment)
     @property

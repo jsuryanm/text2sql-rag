@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# notebooks
+notebooks
+
+# sample doc for testing 
+data/transformers_paper.pdf

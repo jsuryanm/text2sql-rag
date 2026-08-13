@@ -47,7 +47,7 @@ dependencies = [
     "docling-core",         # Chunking infrastructure
     "semchunk",             # Semantic text splitting
     "unstructured[all-docs]",  # Fallback for edge cases
-    "pdfminer-six==20231228",      # Pin compatible version for unstructured
+    "pdfminer-six>=20240706",      # Pin compatible version for unstructured (needs pdfminer.psexceptions)
     "python-magic",        # File type detection
     "pillow",              # Image processing
     # Embeddings & Vector DB
