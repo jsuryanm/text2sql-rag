@@ -157,4 +157,48 @@ class S3StorageBackend(StorageBackend):
         Raises:
             Exception if upload fails
         """
-        pass
+        key = self._get_s3_key(document_id=document_id, file_extension=file_extension, filename=f"document.{file_extension}")
+
+        try:
+            with open(file_path, 'rb') as f:
+                self.s3_client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=key,
+                    Body=f.read(),
+                    ServerSideEncryption="AES256"
+                )
+
+                # adds or overwrites an object in S3 bucket
+            
+            logger.info(f"Uploaded original document to S3: {key}")
+
+        except Exception as e:
+            logger.error(f"Failed to upload to S3: {e}")
+            raise 
+
+    def save_chunks(
+        self,
+        document_id: str,
+        file_extension: str,
+        chunks: List[Dict] 
+    ) -> None:
+        """
+        Save chunks to S3 as JSON.
+
+        Example: s3://bucket/pdf/{doc_id}/chunks.json
+
+        Args:
+            document_id: SHA-256 hash of document
+            file_extension: File extension
+            chunks: List of document chunks
+
+        Raises:
+            Exception if upload fails
+        """
+
+        key = self._get_s3_key(document_id=document_id,
+                               file_extension=file_extension,
+                               filename="chunks.json")
+
+        try:
+            body = json.dumps()
