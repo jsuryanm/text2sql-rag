@@ -227,25 +227,3 @@ def parse_and_chunk_with_context(file_path: str, chunk_size: int = 512, min_chun
         logger.warning(f"Using fallback chunking: {len(chunks)} chunks (no context)")
         return chunks
 
-if __name__ == "__main__":
-    file_path = "/home/surya/multidata-rag/data/transformers_paper.pdf"
-
-    parsed_text = parse_document(file_path)
-    print(f"Parsed document: {file_path}")
-    print("Total length of document: ",len(parsed_text))
-
-    chunks = chunk_text(
-        text=parsed_text,
-        chunk_size=512,
-        overlap=50
-    )
-
-    print(f"No of chunks: {len(chunks)}")
-
-    context_chunks = parse_and_chunk_with_context(
-        file_path=file_path,
-        chunk_size=512,
-        min_chunk_size=256
-    )
-
-    print(f"Context aware chunks: {len(context_chunks)}")
