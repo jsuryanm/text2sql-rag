@@ -188,6 +188,64 @@ def parse_and_chunk_with_context(file_path: str, chunk_size: int = 512, min_chun
         return chunks 
 
     try:
-        pass 
+        from app.services.docling_service import parse_and_chunk_document
+
+        logger.info(f"Using Docling for context-aware chunking: {Path(file_path).name}")
+        chunks = parse_and_chunk_document(file_path, chunk_size=chunk_size, min_chunk_size=min_chunk_size)
+
+        logger.info(f"Docling chunking complete: {len(chunks)} with heading context")
+        return chunks
+
     except ImportError as e: 
-        pass
+        logger.warning(f"Docling not available , falling back to token based chunking: {e}")
+
+        text = parse_document(file_path)
+        chunks = chunk_text(text=text,chunk_size=chunk_size,overlap=50)
+
+        # add empty metadata fields
+        for chunk in chunks:
+            chunk['headings'] = []
+            chunk['page_numbers'] = []
+            chunk['doc_items'] = []
+            chunk['captions'] = []
+
+        logger.info(f'Token based chunking complete: {len(chunks)} (no context)')
+        return chunks 
+
+    except Exception as e:
+        logger.error(f"Docling failed, falling back to token-based chunking: {e}")
+
+        text = parse_document(file_path)
+        chunks = chunk_text(text, chunk_size, overlap=50)
+
+        for chunk in chunks:
+            chunk['headings'] = []
+            chunk['page_numbers'] = []
+            chunk['doc_items'] = []
+            chunk['captions'] = []
+
+        logger.warning(f"Using fallback chunking: {len(chunks)} chunks (no context)")
+        return chunks
+
+if __name__ == "__main__":
+    file_path = "/home/surya/multidata-rag/data/transformers_paper.pdf"
+
+    parsed_text = parse_document(file_path)
+    print(f"Parsed document: {file_path}")
+    print("Total length of document: ",len(parsed_text))
+
+    chunks = chunk_text(
+        text=parsed_text,
+        chunk_size=512,
+        overlap=50
+    )
+
+    print(f"No of chunks: {len(chunks)}")
+
+    context_chunks = parse_and_chunk_with_context(
+        file_path=file_path,
+        chunk_size=512,
+        min_chunk_size=256
+    )
+
+    print(f"Context aware chunks: {len(context_chunks)}")
