@@ -42,7 +42,7 @@ class S3StorageBackend(StorageBackend):
                                  "max_attempts":1,
                                  "mode":"adaptive" # dynamic retry strategy (retry behavior)
                              })
-        # Config allows us to customize how a Boto3 AWS client behaves we can the timeouts, retries, etc
+        # Config allows us to customize how a Boto3 AWS client behaves on timeouts, retries, etc
 
         self.s3_client = boto3.client('s3',config=boto_config)
         # creates a low level aws python client for boto3
@@ -163,9 +163,9 @@ class S3StorageBackend(StorageBackend):
             with open(file_path, 'rb') as f:
                 self.s3_client.put_object(
                     Bucket=self.bucket_name,
-                    Key=key,
-                    Body=f.read(),
-                    ServerSideEncryption="AES256"
+                    Key=key, # Unique identifier for the object within the bucket
+                    Body=f.read(), # Content we are uploading
+                    ServerSideEncryption="AES256" # security setting for the data at rest
                 )
 
                 # adds or overwrites an object in S3 bucket
@@ -201,4 +201,70 @@ class S3StorageBackend(StorageBackend):
                                filename="chunks.json")
 
         try:
-            body = json.dumps()
+            body = json.dumps(chunks,indent=2).encode('utf-8')
+
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=body,
+                ContentType="application/json", # defines the format of the file
+                ServerSideEncryption='AES256'
+            )
+
+            logger.debug(f"Saved {len(chunks)} to S3: {key}")
+
+        except Exception as e:
+            logger.error(f"Failed to save chunks to S3: {e}")
+
+    def save_embeddings(self, document_id: str, file_extension: str, embeddings: np.ndarray) -> None:
+        """
+        Save embeddings to S3 as NumPy binary.
+
+        Example: s3://bucket/pdf/{doc_id}/embeddings.npy
+
+        Args:
+            document_id: SHA-256 hash of document
+            file_extension: File extension
+            embeddings: NumPy array of shape (num_chunks, 1536)
+
+        Raises:
+            Exception if upload fails
+        """
+        key = self._get_s3_key(document_id=document_id,file_extension=file_extension,filename="embeddings.npy")
+
+        try:
+            # Serialize np array to bytes (in-memory)
+            buffer = io.BytesIO() 
+            # this is similar to with open context handler in python but it is faster
+            np.save(buffer, embeddings)
+            buffer.seek(0)
+            # moves the reading pointer back to the original point 
+
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=buffer.getvalue()
+            )
+
+            logger.debug(f"Saved embeddings {embeddings.shape} to S3: {key}")
+
+        except Exception as e:
+            logger.error(f"Failed to save embeddings to S3: {e}")
+            raise 
+
+
+    def save_metadata(self, document_id, file_extension, metadata):
+        """
+        Save metadata to S3 as JSON.
+
+        Example: s3://bucket/pdf/{doc_id}/metadata.json
+
+        Args:
+            document_id: SHA-256 hash of document
+            file_extension: File extension
+            metadata: Document metadata
+
+        Raises:
+            Exception if upload fails
+        """
+        
