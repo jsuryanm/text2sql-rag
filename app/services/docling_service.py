@@ -112,7 +112,7 @@ def chunk_with_hybrid(doc, max_tokens: int = 512, min_tokens: int = 256) -> List
         tiktoken_encoder = tiktoken.get_encoding('o200k_base')
         tokenizer = OpenAITokenizer(
             tokenizer=tiktoken_encoder,
-            max_tokens=max_tokens
+            max_completion_tokens=max_tokens
         )
 
         chunker = HybridChunker(
@@ -315,7 +315,7 @@ def get_docling_status() -> Dict[str, Any]:
         }
     }
 
-if __name__ == "__main__":
-    file_path = "/home/surya/multidata-rag/data/transformers_paper.pdf"
-    chunks = parse_and_chunk_document(file_path)
-    print(chunks)
+# if __name__ == "__main__":
+#     file_path = "/home/surya/multidata-rag/data/transformers_paper.pdf"
+#     chunks = parse_and_chunk_document(file_path)
+#     print(chunks)

@@ -277,3 +277,8 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "@abstractmethod"
 ]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]

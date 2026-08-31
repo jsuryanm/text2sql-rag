@@ -3095,6 +3095,11 @@ test = [
     { name = "pytest-cov" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest-cov" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "black", specifier = ">=26.5.1" },
@@ -3156,6 +3161,9 @@ requires-dist = [
     { name = "vanna", extras = ["fastapi", "openai", "postgres"] },
 ]
 provides-extras = ["aws", "eval", "dev", "test", "all"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest-cov", specifier = ">=7.1.0" }]
 
 [[package]]
 name = "multidict"
