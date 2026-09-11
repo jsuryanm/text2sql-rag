@@ -105,8 +105,8 @@ class QueryCacheService:
 
         except Exception as e:
             logger.warning(f"Cache GET error of {key}: {e}")
-            self._record_miss
-            return None 
+            self._record_miss(cache_type)
+            return None
 
     def set(
         self,
@@ -151,8 +151,8 @@ class QueryCacheService:
         Returns:
             Number of keys deleted
         """
-        if self.enabled:
-            return 0 
+        if not self.enabled:
+            return 0
 
         try:
             keys = self.client.keys(pattern)

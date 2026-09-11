@@ -71,8 +71,8 @@ def _extract_page_numbers(chunk: DocChunk) -> List[int]:
     if chunk.meta and chunk.meta.doc_items:
         for item in chunk.meta.doc_items:
 
-            for prov in getattr(item, 'prov', None) or None:
-                page_no = getattr(prov, 'prov', None)
+            for prov in getattr(item, 'prov', None) or []:
+                page_no = getattr(prov, 'page_no', None)
 
                 if page_no is not None:
                     page_numbers.add(page_no)
@@ -185,37 +185,37 @@ def chunk_with_hybrid(doc, max_tokens: int = 512, min_tokens: int = 256) -> List
             if chunk.meta and chunk.meta.headings:
                 headings = [h.text for h in chunk.meta.headings if hasattr(h, 'text')]
 
-                page_numbers = _extract_page_numbers(chunk)
+            page_numbers = _extract_page_numbers(chunk)
 
-                captions = []
+            captions = []
 
-                if chunk.meta and hasattr(chunk.meta, 'captions') and chunk.meta.captions:
-                    captions = [str(c) for c in chunk.meta.captions]
+            if chunk.meta and hasattr(chunk.meta, 'captions') and chunk.meta.captions:
+                captions = [str(c) for c in chunk.meta.captions]
 
-                doc_items = []
-                if chunk.meta and hasattr(chunk.meta, 'doc_items') and chunk.meta.doc_items:
-                    doc_items = [str(item)[:100] for item in chunk.meta.doc_items[:3]]
+            doc_items = []
+            if chunk.meta and hasattr(chunk.meta, 'doc_items') and chunk.meta.doc_items:
+                doc_items = [str(item)[:100] for item in chunk.meta.doc_items[:3]]
 
-                token_count = len(tiktoken_encoder.encode(chunk.text))
+            token_count = len(tiktoken_encoder.encode(chunk.text))
 
-                chunk_text = chunk.text
-                start_char = char_position 
-                end_char = start_char + len(chunk_text)
-                char_position = end_char
+            chunk_text = chunk.text
+            start_char = char_position
+            end_char = start_char + len(chunk_text)
+            char_position = end_char
 
-                chunk_data = {
-                    "text": chunk_text,
-                    "chunk_index": idx,
-                    "token_index": token_count,
-                    "start_char": start_char,
-                    "end_char": end_char,
-                    "headings": headings,
-                    "doc_items": doc_items,
-                    "page_numbers": page_numbers,
-                    "captions": captions
-                }
+            chunk_data = {
+                "text": chunk_text,
+                "chunk_index": idx,
+                "token_index": token_count,
+                "start_char": start_char,
+                "end_char": end_char,
+                "headings": headings,
+                "doc_items": doc_items,
+                "page_numbers": page_numbers,
+                "captions": captions
+            }
 
-                result.append(chunk_data)
+            result.append(chunk_data)
 
         if result:
             first_chunk = result[0]

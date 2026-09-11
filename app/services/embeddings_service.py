@@ -31,8 +31,7 @@ class EmbeddingService:
 
         self._tokenizer = tiktoken.get_encoding('o200k_base')
 
-        if query_cache_service is not None:
-            self.query_cache_service = QueryCacheService() 
+        self.query_cache_service = query_cache_service if query_cache_service is not None else QueryCacheService()
 
     def _count_tokens(self, texts: List[str]) -> int:
         """Count tokens across a list of texts using the model's tokenizer."""
@@ -108,19 +107,19 @@ class EmbeddingService:
                             cache_type='embedding'
                         )
 
-                        logger.debug(f"Embedding cache: {cache_hits} hits, {cache_misses} misses"
-                                     f" ({cache_hits / (cache_hits + cache_misses) * 100:.1f}% hit rate)")
+                    logger.debug(f"Embedding cache: {cache_hits} hits, {cache_misses} misses"
+                                 f" ({cache_hits / (cache_hits + cache_misses) * 100:.1f}% hit rate)")
 
-                        token_count = self._count_tokens(texts_to_generate)
-                        usage_info = {
-                            "prompt_tokens": token_count,
-                            "total_counts": token_count,
-                            "model": self.model,
-                            "cache_hits": cache_hits,
-                            "cache_misses": cache_misses
-                        }
+                    token_count = self._count_tokens(texts_to_generate)
+                    usage_info = {
+                        "prompt_tokens": token_count,
+                        "total_counts": token_count,
+                        "model": self.model,
+                        "cache_hits": cache_hits,
+                        "cache_misses": cache_misses
+                    }
 
-                        return embeddings, usage_info
+                    return embeddings, usage_info
 
                 except Exception as e:
                     raise Exception(f"Failed to generate embeddings: {str(e)}")
@@ -150,3 +149,25 @@ class EmbeddingService:
 
         except Exception as e:
             raise Exception(f"Failed to generate embeddings: {str(e)}")
+
+    async def generate_single_embedding(self, text: str) -> List[float]:
+        """
+        Generate embedding for a single text.
+
+        Args:
+            text: Text string to embed
+
+        Returns:
+            Embedding vector (list of floats)
+        """
+        embeddings, _ = await self.generate_embeddings([text])
+        return embeddings[0]
+
+    def get_embedding_dimension(self) -> int:
+        """
+        Get the dimension of embeddings produced by this service.
+
+        Returns:
+            int: Embedding dimension (1536 for text-embedding-3-small)
+        """
+        return self.dimensions

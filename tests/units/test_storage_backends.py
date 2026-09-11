@@ -1,35 +1,10 @@
 import pytest
-import tempfile
-import shutil 
 import numpy as np
-
-from pathlib import Path 
-from unittest.mock import patch, MagicMock
 
 from app.services.local_storage import LocalStorageBackend
 
-# pytest.fixture is a decorator used to define reusable setup and teardown code for your test cases
-@pytest.fixture
-def sample_chunks():
-    """Sample document chunks for testing"""
-    return [
-        {
-            "text": "This is the first chunk of text.",
-            "metadata": {"page": 1, "tokens": 7}
-        }
-    ]
-
-@pytest.fixture
-def sample_embeddings():
-    """Sample embeddings array (2 chunks x 1536 dimensions)."""
-    return np.random.rand(2, 1536).astype(np.float32)
-
-@pytest.fixture
-def temp_document(tmp_path):
-    """Create a temporary test document file."""
-    doc_path = tmp_path / "test_document.pdf"
-    doc_path.write_text("This is a test document content.")
-    return doc_path
+# sample_chunks, sample_embeddings, sample_metadata, and temp_document are
+# shared fixtures defined once in tests/conftest.py and reused here.
 
 
 class TestLocalStorageBackend:

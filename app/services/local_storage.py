@@ -172,7 +172,7 @@ class LocalStorageBackend(StorageBackend):
             chunks = json.load(f)
 
         logger.debug(f"Loaded {len(chunks)} chunks from {chunks_file}")
-
+        return chunks
 
     def load_embeddings(self, document_id: str, file_extension: str) -> np.ndarray:
         """

@@ -130,7 +130,7 @@ def test_chunk_with_hybrid(monkeypatch):
     )
 
     fake_item = SimpleNamespace(
-        prov=[SimpleNamespace(prov=1)]
+        prov=[SimpleNamespace(page_no=1)]
     )
 
     fake_meta = SimpleNamespace(

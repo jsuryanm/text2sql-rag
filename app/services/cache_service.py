@@ -183,7 +183,7 @@ class CacheService:
         Note:
             Returns None on any error (graceful degradation)
         """
-        if self.cache_exists(doc_id, file_extension):
+        if not self.cache_exists(doc_id, file_extension):
             return None
 
         try:
@@ -260,12 +260,15 @@ class CacheService:
                 doc_ids = self.storage.list_documents()
                 cleared_count = 0
 
-                logger.warning("Clear entire cache not fully implemented for S3 backend")
+                for cleared_doc_id in doc_ids:
+                    self.storage.delete(cleared_doc_id, file_extension or "")
+                    cleared_count += 1
+
+                logger.info(f"Cleared entire cache: {cleared_count} documents")
                 return {
-                    'cleared': False,
-                    'message': 'Clear entire cache not fully implemented for S3 backend',
-                    'documents_cleared': 0,
-                    'total_documents': len(doc_ids)
+                    'cleared': True,
+                    'message': f'Cleared {cleared_count} documents from cache',
+                    'documents_cleared': cleared_count
                 }
 
         except Exception as e:

@@ -127,7 +127,7 @@ class S3StorageBackend(StorageBackend):
             True if all 4 files exist
         """
         required_files = [
-            f"documents.{file_extension}",
+            f"document.{file_extension}",
             "chunks.json",
             "embeddings.npy",
             "metadata.json"
@@ -353,6 +353,7 @@ class S3StorageBackend(StorageBackend):
             embeddings = np.load(buffer)
 
             logger.debug(f"Loaded embeddings {embeddings.shape} from S3: {key}")
+            return embeddings
 
         except ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
