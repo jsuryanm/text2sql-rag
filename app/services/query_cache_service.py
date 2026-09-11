@@ -72,8 +72,126 @@ class QueryCacheService:
         """Deserialize JSON string to Python object."""
         return json.loads(value)
 
-    def get(self):
-        pass 
+    def get(
+        self,
+        key: str, 
+        cache_type: str = "rag"
+    ) -> Optional[Dict]:
+        """
+        Retrieve value from cache.
+
+        Args:
+            key: Cache key
+            cache_type: Type of cache for statistics ("rag", "embedding", "sql_gen", "sql_result")
+
+        Returns:
+            Cached value (dict) or None if not found
+        """ 
+        if not self.enabled:
+            self._record_miss(cache_type)
+            return None 
+
+        try:
+            # retrieves the string value stored at specified key in your Redis db
+            result = self.client.get(key)
+            if result is None:
+                self._record_miss(cache_type)
+                logger.debug(f"Cache MISS: {key}")
+                return None 
+
+            self._record_hit(cache_type)
+            logger.debug(f"Cache HIT: {key}")
+            return self._deserialize(result)
+
+        except Exception as e:
+            logger.warning(f"Cache GET error of {key}: {e}")
+            self._record_miss
+            return None 
+
+    def set(
+        self,
+        key: str, 
+        value: Dict,
+        ttl: int, 
+        cache_type: str = "rag"
+    ) -> bool:
+        """
+        Store value in cache with TTL.
+
+        Args:
+            key: Cache key
+            value: Value to cache (must be JSON-serializable)
+            ttl: Time-to-live in seconds
+            cache_type: Type of cache for logging
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.enabled:
+            return False
+
+        try:
+            serialized = self._serialize(value)
+            self.client.setex(key, ttl, serialized)
+            # sets the value of key and its expiration
+            logger.debug(f"Cache SET: {key} (TTL: {ttl}s)")
+            return True 
+
+        except Exception as e:
+            logger.warning(f"Cache SET error for key {key}: {e}")
+            return False
+
+    def delete(self, pattern: str) -> int:
+        """
+        Delete keys matching pattern.
+
+        Args:
+            pattern: Redis key pattern (e.g., "rag:*" deletes all RAG cache)
+
+        Returns:
+            Number of keys deleted
+        """
+        if self.enabled:
+            return 0 
+
+        try:
+            keys = self.client.keys(pattern)
+            # returns keys matching regex pattern
+
+            if not keys:
+                return 0 
+
+            deleted = 0 
+            for key in keys:
+                self.client.delete(key)
+                # deletes one or more keys
+                deleted += 1 
+
+            logger.info(f"Cache invalidation: Deleted {deleted} keys matching '{pattern}'")
+            return deleted
+
+        except Exception as e:
+            logger.warning(f"Cache DELETE error for pattern {pattern}: {e}")
+            return 0
+
+    def flush_all(self) -> bool:
+        """
+        Clear entire cache (use with caution).
+
+        Returns:
+            True if successful
+        """
+        if not self.enabled:
+            return False
+
+        try:
+            self.client.flushdb()
+            logger.info("Cache flushed: All keys deleted")
+            return True 
+
+        except Exception as e:
+            logger.warning(f"Cache FLUSH error: {e}")
+            return False
 
     # Cache Key Generators
     def get_embeddings_key(self, text: str) -> str:

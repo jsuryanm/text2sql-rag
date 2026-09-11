@@ -28,7 +28,7 @@ class CacheService:
 
         Args:
             storage_backend: Storage backend to use. If None, auto-selects
-                           based on STORAGE_BACKEND environment variable.
+            based on STORAGE_BACKEND environment variable.
         """
         if storage_backend is None:
             backend_type = getattr(settings,"STORAGE_BACKEND","local")
