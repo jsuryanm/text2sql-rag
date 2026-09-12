@@ -255,6 +255,50 @@ boto3 still insists on *looking like* it has AWS credentials even though
 moto never actually contacts AWS, so a small fixture sets fake ones via
 `monkeypatch.setenv(...)` first.
 
+### Technique 4: attribute-swap after construction
+
+`CacheService` was written to accept its `StorageBackend` through the
+constructor (Technique 1), which is the cleanest option — but not every
+class is written that way. `VectorService` always builds its own Pinecone
+client (`self.pc`) and vector store (`self.vector_store`) internally; there's
+no constructor argument for swapping them in. See
+[tests/units/test_vector_service.py](../tests/units/test_vector_service.py):
+
+```python
+@pytest.fixture
+def vector_service(monkeypatch):
+    monkeypatch.setattr(module, "OpenAIEmbeddings", lambda model, api_key: object())
+    monkeypatch.setattr(module, "PineconeVectorStore", lambda index, embedding: FakeVectorStore(index=index))
+
+    service = VectorService(api_key="fake-pinecone-key", openai_api_key="fake-openai-key")
+    return service
+```
+
+```python
+def test_returns_matched_chunks(self, vector_service):
+    vector_service.vector_store = FakeVectorStore(index=FakeIndex())
+    ...
+```
+
+Two things are happening here:
+- `monkeypatch.setattr(module, "PineconeVectorStore", ...)` replaces the
+  *class* the module would use to build a vector store, so that when
+  `connect_to_index()` runs for real, it builds our fake instead of a real
+  one (the real `PineconeVectorStore` validates its `index` argument is a
+  genuine Pinecone `Index`, which a hand-written fake isn't — patching the
+  constructor sidesteps that check entirely).
+- `vector_service.vector_store = FakeVectorStore(...)` then just overwrites
+  the instance attribute directly, the same way
+  `test_embeddings_service.py` does with `service.client = FakeEmbeddingsClient()`.
+  There's nothing special here — `vector_store` is a regular Python
+  attribute, and Python lets you reassign any attribute on any object after
+  it's been constructed.
+
+Prefer Technique 1 when you're writing the class being tested (accept the
+dependency as a parameter). Reach for this attribute-swap approach when
+you're stuck testing a class that builds its own dependencies internally
+and you'd rather not restructure it just to make it testable.
+
 ### When to use which
 
 - Testing your own class that already accepts a pluggable dependency
@@ -263,6 +307,9 @@ moto never actually contacts AWS, so a small fixture sets fake ones via
   `monkeypatch` (Technique 2).
 - Testing code that hardcodes a real cloud SDK (`boto3`) → use the SDK's
   matching fake library if one exists, like `moto` for AWS (Technique 3).
+- Testing a class that builds its own dependencies internally, with no
+  constructor injection point → construct it for real, then overwrite the
+  attribute holding the dependency (Technique 4).
 
 ---
 
@@ -446,6 +493,43 @@ optional dependency.
   was silently dropped from the output entirely, not just missing its
   heading metadata. Fixed by dedenting the block so every chunk is kept;
   only the `headings` list itself stays conditional on having headings.
+
+### `test_vector_service.py` — `VectorService` (Pinecone)
+
+`VectorService` wraps Pinecone, a hosted vector database, via
+`langchain-pinecone`. It builds its own Pinecone client and vector store
+internally rather than accepting them as constructor arguments, so this
+test file uses Technique 4 from Section 4 (attribute-swap after
+construction) instead of Technique 1: a real `VectorService` is
+constructed with `OpenAIEmbeddings`/`PineconeVectorStore` monkeypatched to
+lightweight fakes, then individual tests overwrite `service.pc` or
+`service.vector_store` with hand-written fakes (`FakePineconeClient`,
+`FakeIndex`, `FakeVectorStore`) as needed.
+
+**Bugs this would have caught:**
+- `connect_to_index()` built the entire connection (`describe_index`,
+  `self.pc.Index(...)`, the `PineconeVectorStore` wrapper) *inside*
+  `if self.index_name not in index_names:` — so the very common case of the
+  index already existing from a previous run did nothing at all, leaving
+  `self.vector_store` as `None` forever. Every other method's lazy-connect
+  guard (`if not self.vector_store: self.connect_to_index()`) would then
+  call this repeatedly and still get `None`, crashing on first real use.
+  Fixed by dedenting the connection block so it always runs, whether the
+  index was just created or already existed.
+  `test_connects_without_recreating_when_index_already_exists` is a direct
+  regression test for this — it seeds `FakePineconeClient` with the index
+  already "existing" and asserts `vector_store` still ends up connected.
+- Same method: `index_names = [index['names'] for index in existing_indexes]`
+  read a field called `'names'` (plural) that doesn't exist on Pinecone's
+  index summaries — the real field is `'name'` (singular) — so this
+  membership check could never correctly detect an existing index. Fixed
+  the key name; `FakePineconeClient.list_indexes()` returns
+  `{"name": ...}` dicts to match.
+- `get_index_stats()` accepted a `namespace` parameter but never used it,
+  even though Pinecone's `describe_index_stats()` response already breaks
+  counts down per namespace. Fixed to look up the requested namespace's own
+  vector count from that breakdown. `test_reports_requested_namespace_vector_count`
+  and `test_unknown_namespace_reports_zero` both exercise this directly.
 
 ---
 
