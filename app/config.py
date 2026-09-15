@@ -81,6 +81,13 @@ class Settings(BaseSettings):
     CACHE_TTL_SQL_GEN: int = 86400      # 24 hours - schema relatively stable
     CACHE_TTL_SQL_RESULT: int = 900     # 15 minutes - data changes frequently
 
+    # Retrieval Pipeline Configuration
+    RERANK_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    RERANK_CANDIDATE_MULTIPLIER: int = 4  # candidate_k = top_k * this, before rerank truncates
+    RRF_K: int = 60                       # Reciprocal Rank Fusion constant
+    ENABLE_QUERY_REWRITE: bool = True
+    ENABLE_HYDE: bool = True
+
     model_config = SettingsConfigDict(env_file='.env',
                                       case_sensitive=False,
                                       env_file_encoding='utf-8',

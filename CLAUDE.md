@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 FastAPI project ("Multi-Source RAG + Text-to-SQL"). No FastAPI app is wired up yet — `app/main.py` is empty, so `fastapi dev` / uvicorn won't run until it has an app object. The root `main.py` is an unrelated `uv init` placeholder ("Hello from multidata-rag!"), not the app entrypoint.
 
-- Empty/unimplemented: `app/main.py`, `evaluate.py`, `lambda_handler.py`, `app/services/rag_service.py`, `sql_service.py`, `vector_service.py`, `router_service.py`
-- Implemented: `app/config.py`, `app/logging_config.py`, `app/utils.py`, and all of `app/services/storage_backend.py`, `local_storage.py`, `s3_storage.py`, `cache_service.py`, `query_cache_service.py`, `embeddings_service.py`, `document_service.py`, `docling_service.py`
+- Empty/unimplemented: `app/main.py`, `evaluate.py`, `lambda_handler.py`, `sql_service.py`
+- Implemented: `app/config.py`, `app/logging_config.py`, `app/utils.py`, and all of `app/services/storage_backend.py`, `local_storage.py`, `s3_storage.py`, `cache_service.py`, `query_cache_service.py`, `embeddings_service.py`, `document_service.py`, `docling_service.py`, `vector_service.py`, `router_service.py`, `rag_service.py`, `retrieval_service.py`, `bm25_service.py`, `reranker_service.py`
 
 Check line count before assuming a service works — the empty ones above are true 0-byte stubs.
 
@@ -44,14 +44,17 @@ Coverage runs automatically with pytest (`--cov=app`, HTML report to `htmlcov/`)
 
 - **Logging** (`app/logging_config.py`): app-wide logging setup. Services use `logging.getLogger("rag_app.<service>")` or `__name__` — match this convention in new modules.
 
+- **Retrieval pipeline** (`app/services/retrieval_service.py`, `bm25_service.py`, `reranker_service.py`): `RAGService.generate_answer()`/`get_similar_chunks()` delegate retrieval to `RetrievalService.retrieve()` rather than calling `VectorService.search()` directly. Three stages: (1) pre-retrieval — LLM query rewrite + HyDE (hypothetical document embeddings), each toggleable via `settings.ENABLE_QUERY_REWRITE`/`ENABLE_HYDE`; (2) hybrid search — dense (Pinecone via `VectorService`) + lexical (`BM25Service`, an in-memory `rank_bm25.BM25Okapi` index built from `CacheService` chunk text, not Pinecone's 1000-char-truncated metadata) fused via Reciprocal Rank Fusion; (3) post-retrieval — dedupe + `RerankerService` (local `sentence-transformers` cross-encoder, lazy-loaded). New deps: `rank-bm25`, `sentence-transformers`. Known limitation: `BM25Service`'s corpus is not namespace-scoped (neither `CacheService` nor `StorageBackend` track Pinecone namespace) — fine while the app is single-namespace (`"default"`). Full details in `docs/rag-pipeline.md`.
+
 ## Testing
 
-Tests live in `tests/units/`, covering every implemented service (storage backends, `CacheService`, `QueryCacheService`, `EmbeddingService`, `document_service`, `docling_service`). No FastAPI/integration tests yet since no app is wired up.
+Tests live in `tests/units/`, covering every implemented service (storage backends, `CacheService`, `QueryCacheService`, `EmbeddingService`, `document_service`, `docling_service`, `vector_service`, `bm25_service`, `reranker_service`, `retrieval_service`). No FastAPI/integration tests yet since no app is wired up.
 
 Shared fixtures (`sample_chunks`, `sample_embeddings`, `sample_metadata`, `temp_document`) live in `tests/conftest.py` and are auto-available to every test file — don't redefine them locally. External dependencies are never hit directly in tests:
 - S3 (`s3_storage.py`) is faked with `moto`'s `mock_aws()`.
 - Redis (`query_cache_service.py`) and OpenAI (`embeddings_service.py`) are faked with small hand-written fake client classes rather than `unittest.mock.MagicMock`, injected via constructor args or attribute assignment.
 - Docling (`docling_service.py`) is faked via `monkeypatch.setattr` on its `DocumentConverter`/`HybridChunker` classes, since the real library is a heavy optional dependency.
+- The reranker's `sentence-transformers` `CrossEncoder` (`reranker_service.py`) is faked the same way — real model weights are never downloaded in tests.
 
 `asyncio_mode = "auto"` is set in `pyproject.toml`, so `async def test_...` functions run automatically without needing `@pytest.mark.asyncio`.
 

@@ -82,6 +82,8 @@ dependencies = [
     "black>=26.5.1",
     "ruff>=0.16.2",
     "moto[s3]>=5.2.2",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=6.0.1",
 ]
 
 [project.optional-dependencies]
